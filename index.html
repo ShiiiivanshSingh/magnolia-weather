@@ -5,229 +5,275 @@
 <title>Cinematic Weather</title>
 
 <style>
-    * {
-        margin: 0;
-        padding: 0;
-        box-sizing: border-box;
-        font-family: "Georgia", "Times New Roman", serif;
-    }
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: "Georgia", "Times New Roman", serif;
+}
 
-    body {
-        height: 100vh;
-        overflow: hidden;
-        background: black;
-        color: white;
-    }
+body {
+    height: 100vh;
+    background: black;
+    color: white;
+    overflow: hidden;
+}
 
-    .scene {
-        position: absolute;
-        inset: 0;
-        background-size: cover;
-        background-position: center;
-        transition: background-image 1s ease;
-    }
+.scene {
+    position: absolute;
+    inset: 0;
+    background-size: cover;
+    background-position: center;
+    transition: background-image 1s ease;
+}
 
-    .vignette {
-        position: absolute;
-        inset: 0;
-        background: radial-gradient(
-            ellipse at center,
-            rgba(0,0,0,0.15),
-            rgba(0,0,0,0.7)
-        );
-        pointer-events: none;
-    }
+.vignette {
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(
+        ellipse at center,
+        rgba(0,0,0,0.15),
+        rgba(0,0,0,0.75)
+    );
+    pointer-events: none;
+}
 
-    .grain {
-        position: absolute;
-        inset: 0;
-        background-image: url("https://i.imgur.com/8bKQZ6M.png");
-        opacity: 0;
-        pointer-events: none;
-        transition: opacity 0.6s ease;
-        mix-blend-mode: overlay;
-    }
+.grain {
+    position: absolute;
+    inset: 0;
+    background-image: url("https://i.imgur.com/8bKQZ6M.png");
+    opacity: 0;
+    mix-blend-mode: overlay;
+    pointer-events: none;
+    transition: opacity 0.6s ease;
+}
 
-    .caption {
-        position: absolute;
-        top: 48%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        font-size: 3rem;
-        letter-spacing: 0.15em;
-        opacity: 0;
-        border-bottom: 3px solid rgba(255,255,255,0.85);
-        padding-bottom: 12px;
-        text-shadow: 0 6px 18px rgba(0,0,0,0.9);
-        white-space: nowrap;
-        transition: opacity 0.6s ease, letter-spacing 1.8s ease;
-    }
+/* City time */
+.time {
+    position: absolute;
+    top: 26px;
+    width: 100%;
+    text-align: center;
+    font-size: 0.85rem;
+    letter-spacing: 0.35em;
+    opacity: 0.75;
+    text-transform: uppercase;
+}
 
-    .caption.loaded {
-        opacity: 1;
-        letter-spacing: 0.04em;
-    }
+/* Caption */
+.caption {
+    position: absolute;
+    top: 48%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 2.8rem;
+    letter-spacing: 0.15em;
+    opacity: 0;
+    border-bottom: 2px solid rgba(255,255,255,0.7);
+    padding-bottom: 10px;
+    white-space: nowrap;
+    text-shadow: 0 6px 18px rgba(0,0,0,0.9);
+    transition: opacity 0.6s ease, letter-spacing 1.6s ease;
+}
 
-    .caption.hidden {
-        opacity: 0;
-    }
+.caption.loaded {
+    opacity: 1;
+    letter-spacing: 0.05em;
+}
 
-    .controls {
-        position: absolute;
-        bottom: 40px;
-        width: 100%;
-        display: flex;
-        justify-content: center;
-        gap: 12px;
-    }
+/* Controls */
+.controls {
+    position: absolute;
+    bottom: 40px;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    gap: 14px;
+}
 
-    input, button {
-        padding: 10px 14px;
-        font-size: 1rem;
-        border: none;
-        outline: none;
-    }
+input {
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid rgba(255,255,255,0.6);
+    color: white;
+    padding: 8px 4px;
+    width: 160px;
+    font-size: 0.95rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+}
 
-    button {
-        cursor: pointer;
-        background: rgba(255,255,255,0.95);
-    }
+input::placeholder {
+    color: rgba(255,255,255,0.5);
+}
+
+button {
+    background: transparent;
+    color: white;
+    border: 1px solid rgba(255,255,255,0.6);
+    padding: 8px 14px;
+    font-size: 0.85rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: background 0.3s ease, color 0.3s ease;
+}
+
+button:hover {
+    background: rgba(255,255,255,0.9);
+    color: black;
+}
 </style>
 </head>
+
 <body>
 
 <div class="scene" id="scene"></div>
 <div class="vignette"></div>
 <div class="grain" id="grain"></div>
 
-<div class="caption" id="caption">
-    HI!
-</div>
+<div class="time" id="time">LOCAL TIME</div>
+
+<div class="caption" id="caption">Enter a City</div>
 
 <div class="controls">
-    <input id="cityInput" placeholder="Enter city">
+    <input id="cityInput" placeholder="City">
     <button onclick="updateWeather()">Update</button>
+    <button onclick="randomCity()">Random</button>
 </div>
+
 <script>
-    const apiKey = "92a2dc11f43333dc593e26b46d7e0f77";
-    const apiUrl =
-        "https://api.openweathermap.org/data/2.5/weather?units=metric&q=";
+const apiKey = "92a2dc11f43333dc593e26b46d7e0f77";
+const apiUrl = "https://api.openweathermap.org/data/2.5/weather?units=metric&q=";
 
-    const skyImages = {
-        morning: {
-            clear:  "https://images.unsplash.com/photo-1667492727913-ae6b3f38afa2",
-            cloudy:"https://image.tmdb.org/t/p/original/yPgcWUZA6FyokCarw34UjOIcbaI.jpg",
-            rainy: "https://images.unsplash.com/photo-1762274804124-83a2e95109a8"
-        },
-        afternoon: {
-            clear:  "https://image.tmdb.org/t/p/original/mD3wN9w8sOVeDwF4bNs2rDFzD8f.jpg",
-            cloudy:"https://image.tmdb.org/t/p/original/6WcAQnoL6DQ9K912V90RpWNpQgU.jpg",
-            rainy: "https://images.unsplash.com/photo-1670541218279-46cdd56003a8"
-        },
-        evening: {
-            clear:  "https://image.tmdb.org/t/p/original/3jBJ43UImtFDEIzylB1MlAYX8TT.jpg",
-            cloudy:"https://images.unsplash.com/photo-1682218033121-ac3a5b33b7e0",
-            rainy: "https://image.tmdb.org/t/p/original/fY01TmPQH3pu2x1e1CacZXkabeC.jpg"
-        },
-        night: {
-            clear:  "https://image.tmdb.org/t/p/original/xs8g06qSblZIkSyFS7YmAo1IgWT.jpg",
-            cloudy:"https://image.tmdb.org/t/p/original/afIh8FoiMp3zXLY8aJ1cAnPq3Uc.jpg",
-            rainy: "https://image.tmdb.org/t/p/original/1rXQ3fw6VdD6mIb0a9YlanNuPSL.jpg"
-        }
-    };
+const randomCities = [
+    "Tokyo","Paris","New York","London","Mumbai",
+    "Reykjavik","Rome","Berlin","Los Angeles","Seoul",
+    "Istanbul","Buenos Aires","Oslo","Cairo","Bangkok"
+];
 
-    const captions = {
-        morning: {
-            clear:  "Clear Skies, Soft Morning Light.",
-            cloudy:"Partly Cloudy, A Quiet Morning.",
-            rainy: "Steady Rain, Muted Morning Light."
-        },
-        afternoon: {
-            clear:  "Clear Skies, Warm Afternoon.",
-            cloudy:"Building Clouds, Calm Afternoon.",
-            rainy: "Rain Showers, A Grey Afternoon."
-        },
-        evening: {
-            clear:  "Clearing Skies, Cool Evening.",
-            cloudy:"Low Clouds, A Slow Evening.",
-            rainy: "Rain Continuing, Dimming Evening Light."
-        },
-        night: {
-            clear:  "Clear Skies, Calm Overnight.",
-            cloudy:"Cloud Cover, A Still Night.",
-            rainy: "Rain Clearing, Breezy Overnight."
-        }
-    };
-
-    const scene = document.getElementById("scene");
-    const caption = document.getElementById("caption");
-    const grain = document.getElementById("grain");
-
-    function getTimeBucket(hour) {
-        if (hour >= 5 && hour < 12) return "morning";
-        if (hour >= 12 && hour < 17) return "afternoon";
-        if (hour >= 17 && hour < 20) return "evening";
-        return "night";
+const skyImages = {
+    morning: {
+        clear: "https://images.unsplash.com/photo-1667492727913-ae6b3f38afa2",
+        cloudy: "https://image.tmdb.org/t/p/original/yPgcWUZA6FyokCarw34UjOIcbaI.jpg",
+        rainy: "https://images.unsplash.com/photo-1762274804124-83a2e95109a8"
+    },
+    afternoon: {
+        clear: "https://image.tmdb.org/t/p/original/mD3wN9w8sOVeDwF4bNs2rDFzD8f.jpg",
+        cloudy: "https://images.unsplash.com/photo-1697057400103-41efba3560df",
+        rainy: "https://images.unsplash.com/photo-1670541218279-46cdd56003a8"
+    },
+    evening: {
+        clear: "https://image.tmdb.org/t/p/original/3jBJ43UImtFDEIzylB1MlAYX8TT.jpg",
+        cloudy: "https://images.unsplash.com/photo-1682218033121-ac3a5b33b7e0",
+        rainy: "https://image.tmdb.org/t/p/original/fY01TmPQH3pu2x1e1CacZXkabeC.jpg"
+    },
+    night: {
+        clear: "https://image.tmdb.org/t/p/original/xs8g06qSblZIkSyFS7YmAo1IgWT.jpg",
+        cloudy: "https://image.tmdb.org/t/p/original/afIh8FoiMp3zXLY8aJ1cAnPq3Uc.jpg",
+        rainy: "https://image.tmdb.org/t/p/original/1rXQ3fw6VdD6mIb0a9YlanNuPSL.jpg"
     }
+};
 
-    function getWeatherBucket(data) {
-        const main = data.weather[0].main.toLowerCase();
-        if (main.includes("rain") || main.includes("drizzle")) return "rainy";
-        if (main.includes("cloud")) return "cloudy";
-        return "clear";
+const captions = {
+    morning: {
+        clear: "Clear Skies, Soft Morning Light.",
+        cloudy: "Quiet Clouds, Early Morning.",
+        rainy: "Rain Falling, Muted Morning."
+    },
+    afternoon: {
+        clear: "Clear Skies, Warm Afternoon.",
+        cloudy: "Clouds Gathering Slowly.",
+        rainy: "Grey Skies, Afternoon Rain."
+    },
+    evening: {
+        clear: "Cooling Air, Open Skies.",
+        cloudy: "Low Clouds, Evening Stillness.",
+        rainy: "Rain Lingers After Sunset."
+    },
+    night: {
+        clear: "Clear Skies, Night Calm.",
+        cloudy: "Cloud Cover, Silent Night.",
+        rainy: "Rain Softens the Night."
     }
+};
 
-    function getCityHour(timezoneOffset) {
-        const utc = Date.now() + new Date().getTimezoneOffset() * 60000;
-        return new Date(utc + timezoneOffset * 1000).getHours();
+const scene = document.getElementById("scene");
+const caption = document.getElementById("caption");
+const grain = document.getElementById("grain");
+const timeEl = document.getElementById("time");
+const cityInput = document.getElementById("cityInput");
+
+function getTimeBucket(hour) {
+    if (hour >= 5 && hour < 12) return "morning";
+    if (hour >= 12 && hour < 17) return "afternoon";
+    if (hour >= 17 && hour < 20) return "evening";
+    return "night";
+}
+
+function getWeatherBucket(data) {
+    const main = data.weather[0].main.toLowerCase();
+    if (main.includes("rain")) return "rainy";
+    if (main.includes("cloud")) return "cloudy";
+    return "clear";
+}
+
+function formatTime(date) {
+    return date.toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit"
+    }).toUpperCase();
+}
+
+function getCityHour(offset) {
+    const utc = Date.now() + new Date().getTimezoneOffset() * 60000;
+    return new Date(utc + offset * 1000);
+}
+
+async function updateWeather() {
+    const city = cityInput.value.trim();
+    if (!city) return;
+
+    try {
+        const res = await fetch(apiUrl + city + "&appid=" + apiKey);
+        const data = await res.json();
+
+        const cityDate = getCityHour(data.timezone);
+        const hour = cityDate.getHours();
+        const timeBucket = getTimeBucket(hour);
+        const weather = getWeatherBucket(data);
+
+        timeEl.textContent = formatTime(cityDate);
+
+        caption.classList.remove("loaded");
+        setTimeout(() => {
+            scene.style.backgroundImage =
+                `url('${skyImages[timeBucket][weather]}')`;
+
+            caption.textContent = captions[timeBucket][weather];
+            grain.style.opacity = timeBucket === "night" ? "0.18" : "0";
+
+            requestAnimationFrame(() => {
+                caption.classList.add("loaded");
+            });
+        }, 600);
+
+    } catch {
+        caption.textContent = "The Sky Falls Silent.";
     }
+}
 
-    async function updateWeather() {
-        const city = cityInput.value.trim();
-        if (!city) return;
+function randomCity() {
+    const city = randomCities[Math.floor(Math.random() * randomCities.length)];
+    cityInput.value = city;
+    updateWeather();
+}
 
-        try {
-            const res = await fetch(apiUrl + city + "&appid=" + apiKey);
-            const data = await res.json();
-
-            const hour = getCityHour(data.timezone);
-            const time = getTimeBucket(hour);
-            const weather = getWeatherBucket(data);
-
-            caption.classList.add("hidden");
-            caption.classList.remove("loaded");
-
-            setTimeout(() => {
-                scene.style.backgroundImage =
-                    `url('${skyImages[time][weather]}')`;
-
-                caption.textContent = captions[time][weather];
-
-                grain.style.opacity = time === "night" ? "0.18" : "0";
-
-                caption.classList.remove("hidden");
-
-                requestAnimationFrame(() => {
-                    caption.classList.add("loaded");
-                });
-            }, 700);
-
-        } catch {
-            caption.textContent = "Weather Unavailable.";
-        }
-    }
-
-// Neutral initial state
+/* Initial */
 scene.style.backgroundImage =
     "url('https://images.pexels.com/photos/53594/blue-clouds-day-fluffy-53594.jpeg')";
-caption.textContent = "Enter a City.";
-
-
-    window.onload = () => {
-        setTimeout(() => caption.classList.add("loaded"), 300);
-    };
+caption.classList.add("loaded");
 </script>
-
 
 </body>
 </html>
